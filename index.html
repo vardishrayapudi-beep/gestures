@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medication gesture check</title>
+  <link rel="stylesheet" href="styles.css?v=clean-3">
+  <style>.debug-panel{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}.debug-row{display:flex;gap:12px;align-items:flex-start;margin-top:10px}.debug-row canvas{width:96px;height:96px;border:1px solid var(--line);border-radius:8px;background:#0b241f;flex:none}.debug-info{flex:1;min-width:0}.debug-readout{font:700 12px ui-monospace,Consolas,monospace;margin:0 0 8px;word-break:break-word}.debug-slider-label{display:block;font-size:11px;color:var(--muted)}.debug-slider-label input{width:100%;margin-top:5px}.debug-hint{font-size:11px;color:var(--muted);line-height:1.45;margin:8px 0 0}</style>
+</head>
+<body>
+  <main class="app">
+    <header><div><p class="eyebrow">PRIVATE CAMERA CHECK</p><h1>Medication gesture check</h1></div><span class="privacy">● Nothing is saved</span></header>
+    <section class="layout">
+      <section class="card camera-card">
+        <div id="stage" class="stage">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="landmarks"></canvas>
+          <div id="mouthZone" class="mouth-zone hidden">Mouth zone</div>
+          <div id="cameraMessage" class="camera-message">Click Start camera</div>
+          <div id="cameraBadge" class="camera-badge">Camera off</div>
+        </div>
+        <div id="feedback" class="feedback neutral"><span class="feedback-dot"></span><div><strong id="feedbackTitle">Ready</strong><p id="feedbackText">Start the camera, then follow the green/red instructions.</p></div></div>
+        <div class="actions"><button id="startBtn" class="primary">Start camera</button><button id="demoBtn" class="secondary">Try demo</button></div>
+        <p class="note">Test mode: any visible object counts as the tablet in step 2 and the cup in step 5.</p>
+      </section>
+      <aside class="card side">
+        <div class="status-line"><span class="eyebrow">CURRENT STEP</span><span id="stateBadge" class="state-badge">Not started</span></div>
+        <div class="coach"><p class="eyebrow">HOW TO DO IT</p><h2 id="coachTitle">Start the camera</h2><p id="coachText">Your camera preview will appear on the left before hand recognition starts.</p><div id="coachList"></div></div>
+        <div id="steps" class="steps"></div>
+        <div class="score"><div class="status-line"><span class="eyebrow">PROGRESS</span><strong id="scoreValue">0%</strong></div><div class="meter"><span id="scoreBar"></span></div><p id="scoreText">No gesture checked yet.</p></div>
+        <div class="debug-panel">
+          <p class="eyebrow">DEBUG — OBJECT DETECTION</p>
+          <div class="debug-row"><canvas id="debugPreview" width="96" height="96"></canvas><div class="debug-info"><p id="debugReadout" class="debug-readout">delta=— threshold=—</p><label class="debug-slider-label">Threshold: <span id="thresholdValue">0.085</span><input id="thresholdSlider" type="range" min="0.01" max="0.3" step="0.005" value="0.085"></label><p class="debug-hint">The square shows the exact palm pixels being compared. Move the object in and out of your palm and adjust the threshold until the readout separates empty from object present.</p></div></div>
+        </div>
+      </aside>
+    </section>
+    <p class="privacy-note">This detects the gesture sequence only. It cannot prove that a pill was swallowed.</p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="app.js?v=clean-3"></script>
+</body>
+</html>
