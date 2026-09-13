@@ -194,7 +194,7 @@ async function checkDailySummaries(now) {
   const today = dateKey(now);
   for (const contact of family.contacts || []) {
     const key = `${contact.id}:${today}`;
-    if (!contact.daily_summary || contact.daily_summary_time !== timeKey(now) || summarySent.has(key)) continue;
+    if (!contact.daily_summary || timeKey(now) < contact.daily_summary_time || summarySent.has(key)) continue;
     summarySent.add(key);
     const scheduled = routines.filter(item => item.active && item.days_of_week?.includes(WEEKDAYS[now.getDay()])).length;
     const completed = events.filter(event => eventDate(event) === today && event.status === 'verified').length;
@@ -210,8 +210,10 @@ function checkSchedule() {
   const routines = readJson('routines.json', []);
   for (const routine of routines) {
     if (!routine.active || !routine.days_of_week?.includes(weekday)) continue;
-    if (routine.scheduled_time === currentTime) triggerReminder(routine);
-    if (addMinutes(routine.scheduled_time, routine.grace_period_minutes) === currentTime && !verifiedToday(routine.id, today)) {
+    const alreadyReminded = readJson('reminders.json', []).some(item => item.key === reminderKey(routine.id, today));
+    if (currentTime >= routine.scheduled_time && !alreadyReminded) triggerReminder(routine);
+    const graceDeadline = addMinutes(routine.scheduled_time, routine.grace_period_minutes);
+    if (currentTime >= graceDeadline && !verifiedToday(routine.id, today) && !eventExists(routine.id, today, 'missed')) {
       markMissed(routine);
     }
   }
