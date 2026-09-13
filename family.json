@@ -1,0 +1,15 @@
+{
+  "elder_name": "Ravi",
+  "contacts": [
+    {
+      "id": "daughter",
+      "name": "Daughter",
+      "whatsapp_number": "",
+      "notify_on": [
+        "all"
+      ],
+      "daily_summary": true,
+      "daily_summary_time": "20:00"
+    }
+  ]
+}

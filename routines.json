@@ -1,0 +1,36 @@
+[
+  {
+    "id": "morning_medicine",
+    "type": "medicine",
+    "label": "Morning medicine",
+    "scheduled_time": "08:00",
+    "grace_period_minutes": 30,
+    "days_of_week": [
+      "mon",
+      "tue",
+      "wed",
+      "thu",
+      "fri",
+      "sat",
+      "sun"
+    ],
+    "active": true
+  },
+  {
+    "id": "morning_walk",
+    "type": "walk",
+    "label": "Morning walk",
+    "scheduled_time": "09:00",
+    "grace_period_minutes": 60,
+    "days_of_week": [
+      "mon",
+      "tue",
+      "wed",
+      "thu",
+      "fri",
+      "sat",
+      "sun"
+    ],
+    "active": false
+  }
+]
