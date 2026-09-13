@@ -18,10 +18,10 @@ function typeIcon(type) { return type === 'medicine' ? '💊' : type === 'walk' 
 function prettyTime(time) { const [hours, minutes] = time.split(':').map(Number); const suffix = hours >= 12 ? 'PM' : 'AM'; return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${suffix}`; }
 function prettyStamp(timestamp) { return new Date(timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
 function latestEvent(routineId, date = state.date) { return state.events.filter(event => event.routine_id === routineId && localDate(new Date(event.timestamp)) === date).sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0]; }
-function statusText(event) { if (!event) return ['pending', 'Not verified']; if (event.status === 'verified') return ['verified', `Verified · ${prettyStamp(event.timestamp)}`]; if (event.status === 'missed') return ['missed', 'Missed']; if (event.status === 'failed') return ['failed', 'Failed']; return ['uncertain', 'Needs attention']; }
+function statusText(event, routine = null) { if (!event) return ['pending', 'Not verified']; if (event.status === 'verified') { if (routine?.type === 'walk' && event.duration_seconds) return ['verified', `Verified · ${Math.max(1, Math.round(event.duration_seconds / 60))} minutes`]; return ['verified', `Verified · ${prettyStamp(event.timestamp)}`]; } if (event.status === 'missed') return ['missed', 'Missed']; if (event.status === 'failed') return ['failed', 'Failed']; return ['uncertain', 'Needs attention']; }
 
 async function loadBase() {
-  try { [state.routines, state.family] = await Promise.all([api('routines'), api('family')]); await loadDate(state.date); renderAll(); notice(''); }
+  try { [state.routines, state.family] = await Promise.all([api('routines'), api('family')]); await loadDate(state.date); renderAll(); if (!(state.family?.contacts || [])[0]?.whatsapp_number) { showView('setup'); notice('Complete one-time setup before using the family alerts.'); } else notice(''); }
   catch (error) { notice(`Dashboard backend is not available yet: ${error.message}`, true); }
 }
 
@@ -31,14 +31,14 @@ function renderToday() {
   $('todayHeading').textContent = `${state.family?.elder_name || 'Elder'} · ${new Date(`${state.date}T12:00:00`).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}`;
   const list = $('todayList');
   if (!state.routines.length) { list.innerHTML = '<div class="empty">No routines have been added yet.</div>'; return; }
-  list.innerHTML = state.routines.filter(item => item.active).sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time)).map(routine => { const [kind, label] = statusText(latestEvent(routine.id)); return `<article class="routine-card"><div class="routine-icon">${typeIcon(routine.type)}</div><div><div class="routine-name">${escapeHtml(routine.label)}</div><div class="routine-meta">${prettyTime(routine.scheduled_time)} · ${routine.grace_period_minutes} minute grace period</div></div><div class="status ${kind}">${label}</div></article>`; }).join('');
+  list.innerHTML = state.routines.filter(item => item.active).sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time)).map(routine => { const [kind, label] = statusText(latestEvent(routine.id), routine); return `<article class="routine-card"><div class="routine-icon">${typeIcon(routine.type)}</div><div><div class="routine-name">${escapeHtml(routine.label)}</div><div class="routine-meta">${prettyTime(routine.scheduled_time)} · ${routine.grace_period_minutes} minute grace period</div></div><div class="status ${kind}">${label}</div></article>`; }).join('');
 }
 
 function renderHistory() {
   $('historyDate').value = state.date;
   const list = $('historyList');
   if (!state.events.length) { list.innerHTML = '<div class="empty">No event has been logged for this date.</div>'; return; }
-  list.innerHTML = state.events.slice().sort((a, b) => b.timestamp.localeCompare(a.timestamp)).map(event => { const routine = state.routines.find(item => item.id === event.routine_id); const [kind, label] = statusText(event); return `<article class="event-card"><div><strong>${typeIcon(routine?.type)} ${escapeHtml(routine?.label || event.routine_id)}</strong><p>${new Date(event.timestamp).toLocaleString()} · confidence ${Math.round((event.confidence || 0) * 100)}%</p></div><div class="status ${kind}">${label}</div></article>`; }).join('');
+  list.innerHTML = state.events.slice().sort((a, b) => b.timestamp.localeCompare(a.timestamp)).map(event => { const routine = state.routines.find(item => item.id === event.routine_id); const [kind, label] = statusText(event, routine); return `<article class="event-card"><div><strong>${typeIcon(routine?.type)} ${escapeHtml(routine?.label || event.routine_id)}</strong><p>${new Date(event.timestamp).toLocaleString()} · confidence ${Math.round((event.confidence || 0) * 100)}%</p></div><div class="status ${kind}">${label}</div></article>`; }).join('');
 }
 
 function routineForm(routine = null) {
@@ -62,16 +62,27 @@ function renderSettings() {
   $('settingsPanel').querySelectorAll('.save-settings').forEach(button => button.addEventListener('click', saveSettings));
 }
 
+function renderSetup() {
+  const form = $('setupForm');
+  if (!form) return;
+  const contact = state.family?.contacts?.[0] || {};
+  form.elements.elder_name.value = state.family?.elder_name || '';
+  form.elements.contact_name.value = contact.name || '';
+  form.elements.whatsapp_number.value = contact.whatsapp_number || '';
+}
+
 async function saveRoutine(event) { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form).entries()); data.days_of_week = [...form.querySelectorAll('[name="days_of_week"]:checked')].map(input => input.value); data.grace_period_minutes = Number(data.grace_period_minutes); try { if (form.dataset.id) await api(`routines/${encodeURIComponent(form.dataset.id)}`, { method: 'PUT', body: JSON.stringify(data) }); else await api('routines', { method: 'POST', body: JSON.stringify(data) }); state.routines = await api('routines'); state.editingId = null; renderRoutines(); renderToday(); notice('Routine saved.'); } catch (error) { notice(error.message, true); } }
 async function deleteRoutine(id) { if (!confirm('Remove this routine?')) return; try { await api(`routines/${encodeURIComponent(id)}`, { method: 'DELETE' }); state.routines = await api('routines'); renderRoutines(); renderToday(); notice('Routine removed.'); } catch (error) { notice(error.message, true); } }
 async function saveSettings(event) { const card = event.currentTarget.closest('[data-contact]'); const select = card.querySelector('[name="notify"]').value; const notify_on = select === 'all' ? ['all'] : select === 'missed_uncertain' ? ['missed', 'uncertain'] : select === 'missed' ? ['missed'] : ['never']; try { await api(`family/${encodeURIComponent(card.dataset.contact)}/preferences`, { method: 'POST', body: JSON.stringify({ notify_on, daily_summary: card.querySelector('[name="summary"]').checked, daily_summary_time: card.querySelector('[name="summaryTime"]').value }) }); state.family = await api('family'); renderSettings(); notice('Preferences saved.'); } catch (error) { notice(error.message, true); } }
+async function saveSetup(event) { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form).entries()); try { state.family = await api('family/setup', { method: 'POST', body: JSON.stringify(data) }); renderSetup(); renderSettings(); showView('today'); notice('Setup saved. Family alerts are ready.'); } catch (error) { notice(error.message, true); } }
 
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])); }
-function renderAll() { renderToday(); renderHistory(); renderRoutines(); renderSettings(); }
+function renderAll() { renderToday(); renderHistory(); renderRoutines(); renderSettings(); renderSetup(); }
 function showView(view) { document.querySelectorAll('.tab').forEach(tab => tab.classList.toggle('active', tab.dataset.view === view)); document.querySelectorAll('.view').forEach(section => section.classList.toggle('active-view', section.id === `${view}View`)); $('pageTitle').textContent = view[0].toUpperCase() + view.slice(1); }
 
 document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', async () => { showView(tab.dataset.view); if (tab.dataset.view === 'history') { await loadDate($('historyDate').value || state.date); renderHistory(); } }));
 $('historyDate').addEventListener('change', async event => { try { await loadDate(event.target.value); renderHistory(); } catch (error) { notice(error.message, true); } });
 $('refreshToday').addEventListener('click', async () => { try { await loadDate(state.date); renderAll(); notice('Updated just now.'); } catch (error) { notice(error.message, true); } });
 $('newRoutine').addEventListener('click', () => { state.editingId = 'new'; showView('routines'); renderRoutines(); });
+$('setupForm').addEventListener('submit', saveSetup);
 loadBase();
