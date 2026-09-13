@@ -27,7 +27,7 @@
           <div id="cameraBadge" class="camera-badge">Camera off</div>
         </div>
         <div id="feedback" class="feedback neutral"><span class="feedback-dot"></span><div><strong id="feedbackTitle">Ready</strong><p id="feedbackText">Start the camera, then follow the green/red instructions.</p></div></div>
-        <div class="actions"><button id="startBtn" class="primary">Start camera</button><button id="demoBtn" class="secondary">Try demo</button></div>
+        <div class="actions"><button id="startBtn" class="primary">Start camera</button><button id="demoBtn" class="secondary">Try demo</button><button id="resetBtn" class="session-reset hidden">Start over</button><button id="retryBtn" class="secondary retry-btn hidden">Try again</button></div>
         <p class="note">Test mode: any visible object counts as the tablet in step 2 and the cup in step 5.</p>
       </section>
       <aside class="card side">
@@ -40,6 +40,14 @@
           <div class="debug-row"><canvas id="debugPreview" width="96" height="96"></canvas><div class="debug-info"><p id="debugReadout" class="debug-readout">delta=— threshold=—</p><label class="debug-slider-label">Threshold: <span id="thresholdValue">0.085</span><input id="thresholdSlider" type="range" min="0.01" max="0.3" step="0.005" value="0.085"></label><p class="debug-hint">The square shows the exact palm pixels being compared. Move the object in and out of your palm and adjust the threshold until the readout separates empty from object present.</p></div></div>
         </div>
       </aside>
+    </section>
+    <section id="walkPanel" class="walk-panel hidden">
+      <p class="eyebrow">WALK CHECK</p>
+      <h2>🚶 Time for your walk</h2>
+      <p id="walkGoal">Goal: 20 minutes of movement</p>
+      <div class="walk-time"><span id="walkTimer">0:00</span></div>
+      <p id="walkStatus" class="walk-status">Ready when you are.</p>
+      <div class="actions"><button id="startWalkBtn" class="primary">Start walk</button><button id="finishWalkBtn" class="secondary" disabled>I'm done</button></div>
     </section>
     <p class="privacy-note">Video stays in this browser and is never sent to the server. Only the final gesture result is logged. This cannot prove that a pill was swallowed.</p>
   </main>

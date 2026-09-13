@@ -287,6 +287,10 @@ async function handleApi(req, res, url) {
         confidence: Math.max(0, Math.min(1, Number(input.confidence ?? 0))),
         step_confidences: Array.isArray(input.step_confidences) ? input.step_confidences.map(value => Number(value)) : []
       };
+      if (input.duration_seconds !== undefined) {
+        const duration = Number(input.duration_seconds);
+        if (Number.isFinite(duration)) event.duration_seconds = Math.max(0, Math.round(duration));
+      }
       events.push(event);
       writeJson('events.json', events.slice(-2000));
       return json(res, 201, event);
@@ -296,6 +300,28 @@ async function handleApi(req, res, url) {
   if (resource === 'family') {
     const family = readJson('family.json', { elder_name: 'Elder', contacts: [] });
     if (req.method === 'GET' && !parts[2]) return json(res, 200, family);
+    if (parts[2] === 'setup' && req.method === 'POST') {
+      const input = await readBody(req);
+      const elderName = String(input.elder_name || '').trim();
+      const contactName = String(input.contact_name || '').trim();
+      const whatsappNumber = String(input.whatsapp_number || '').trim();
+      if (!elderName || !contactName || !/^\+[1-9]\d{7,14}$/.test(whatsappNumber)) {
+        return json(res, 400, { error: 'Enter an elder name, contact name, and a valid E.164 WhatsApp number.' });
+      }
+      const existing = family.contacts?.[0] || {};
+      family.elder_name = elderName;
+      family.contacts = [{
+        ...existing,
+        id: existing.id || 'primary_contact',
+        name: contactName,
+        whatsapp_number: whatsappNumber,
+        notify_on: existing.notify_on || ['missed', 'uncertain'],
+        daily_summary: existing.daily_summary ?? true,
+        daily_summary_time: existing.daily_summary_time || '20:00'
+      }];
+      writeJson('family.json', family);
+      return json(res, 200, family);
+    }
     if (parts[2] && parts[3] === 'preferences' && req.method === 'POST') {
       const contact = family.contacts.find(item => item.id === parts[2]);
       if (!contact) return json(res, 404, { error: 'Contact not found' });
