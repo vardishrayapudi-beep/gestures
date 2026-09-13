@@ -3,49 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Family dashboard · Medication gestures</title>
-  <link rel="stylesheet" href="styles.css?v=1">
+  <title>Medication gesture check</title>
+  <link rel="stylesheet" href="styles.css?v=clean-3">
+  <style>.debug-panel{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}.debug-row{display:flex;gap:12px;align-items:flex-start;margin-top:10px}.debug-row canvas{width:96px;height:96px;border:1px solid var(--line);border-radius:8px;background:#0b241f;flex:none}.debug-info{flex:1;min-width:0}.debug-readout{font:700 12px ui-monospace,Consolas,monospace;margin:0 0 8px;word-break:break-word}.debug-slider-label{display:block;font-size:11px;color:var(--muted)}.debug-slider-label input{width:100%;margin-top:5px}.debug-hint{font-size:11px;color:var(--muted);line-height:1.45;margin:8px 0 0}</style>
 </head>
 <body>
-  <main class="dashboard-shell">
-    <header class="dashboard-header">
-      <div>
-        <p class="eyebrow">FAMILY DASHBOARD</p>
-        <h1 id="pageTitle">Today</h1>
-        <p class="subtitle">A calm summary of routine activity. No live video is shown here.</p>
-      </div>
-      <a class="back-link" href="/">Open elder check</a>
-    </header>
-
-    <nav class="tabs" aria-label="Dashboard sections">
-      <button class="tab active" data-view="today">Today</button>
-      <button class="tab" data-view="history">History</button>
-      <button class="tab" data-view="routines">Routines</button>
-      <button class="tab" data-view="settings">Settings</button>
-    </nav>
-
-    <div id="notice" class="notice" role="status"></div>
-
-    <section id="todayView" class="view active-view">
-      <div class="section-heading"><div><p class="eyebrow">TODAY</p><h2 id="todayHeading">Routine status</h2></div><button id="refreshToday" class="secondary">Refresh</button></div>
-      <div id="todayList" class="routine-list"></div>
+  <main class="app">
+    <header><div><p class="eyebrow">PRIVATE CAMERA CHECK</p><h1>Medication gesture check</h1></div><div class="header-tools"><a class="dashboard-link" href="/dashboard/">Family dashboard</a><span class="privacy">● No video saved</span></div></header>
+    <section class="layout">
+      <section class="card camera-card">
+        <div id="stage" class="stage">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="landmarks"></canvas>
+          <div id="mouthZone" class="mouth-zone hidden">Mouth zone</div>
+          <div id="cameraMessage" class="camera-message">Click Start camera</div>
+          <div id="cameraBadge" class="camera-badge">Camera off</div>
+        </div>
+        <div id="feedback" class="feedback neutral"><span class="feedback-dot"></span><div><strong id="feedbackTitle">Ready</strong><p id="feedbackText">Start the camera, then follow the green/red instructions.</p></div></div>
+        <div class="actions"><button id="startBtn" class="primary">Start camera</button><button id="demoBtn" class="secondary">Try demo</button></div>
+        <p class="note">Test mode: any visible object counts as the tablet in step 2 and the cup in step 5.</p>
+      </section>
+      <aside class="card side">
+        <div class="status-line"><span class="eyebrow">CURRENT STEP</span><span id="stateBadge" class="state-badge">Not started</span></div>
+        <div class="coach"><p class="eyebrow">HOW TO DO IT</p><h2 id="coachTitle">Start the camera</h2><p id="coachText">Your camera preview will appear on the left before hand recognition starts.</p><div id="coachList"></div></div>
+        <div id="steps" class="steps"></div>
+        <div class="score"><div class="status-line"><span class="eyebrow">PROGRESS</span><strong id="scoreValue">0%</strong></div><div class="meter"><span id="scoreBar"></span></div><p id="scoreText">No gesture checked yet.</p></div>
+        <div class="debug-panel">
+          <p class="eyebrow">DEBUG — OBJECT DETECTION</p>
+          <div class="debug-row"><canvas id="debugPreview" width="96" height="96"></canvas><div class="debug-info"><p id="debugReadout" class="debug-readout">delta=— threshold=—</p><label class="debug-slider-label">Threshold: <span id="thresholdValue">0.085</span><input id="thresholdSlider" type="range" min="0.01" max="0.3" step="0.005" value="0.085"></label><p class="debug-hint">The square shows the exact palm pixels being compared. Move the object in and out of your palm and adjust the threshold until the readout separates empty from object present.</p></div></div>
+        </div>
+      </aside>
     </section>
-
-    <section id="historyView" class="view">
-      <div class="section-heading"><div><p class="eyebrow">HISTORY</p><h2>Recent activity</h2></div><label class="date-label">Date <input id="historyDate" type="date"></label></div>
-      <div id="historyList" class="event-list"></div>
-    </section>
-
-    <section id="routinesView" class="view">
-      <div class="section-heading"><div><p class="eyebrow">ROUTINE EDITOR</p><h2>Scheduled activities</h2></div><button id="newRoutine" class="primary">Add routine</button></div>
-      <div id="routineEditor" class="editor-grid"></div>
-    </section>
-
-    <section id="settingsView" class="view">
-      <div class="section-heading"><div><p class="eyebrow">SETTINGS</p><h2>Notification preferences</h2></div></div>
-      <div id="settingsPanel" class="settings-panel"></div>
-    </section>
+    <p class="privacy-note">Video stays in this browser and is never sent to the server. Only the final gesture result is logged. This cannot prove that a pill was swallowed.</p>
   </main>
-  <script src="app.js?v=1"></script>
+  <div id="alarmModal" class="alarm-modal hidden" role="dialog" aria-modal="true" aria-labelledby="alarmTitle">
+    <div class="alarm-card">
+      <p class="eyebrow">MEDICATION REMINDER</p>
+      <h2 id="alarmTitle">Time for your medicine</h2>
+      <p id="alarmText">Follow the guide to complete your medication check.</p>
+      <button id="alarmStartBtn" class="primary">Start verification</button>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="app.js?v=clean-3"></script>
 </body>
 </html>
