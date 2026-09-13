@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family dashboard · Medication gestures</title>
+  <link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+  <main class="dashboard-shell">
+    <header class="dashboard-header">
+      <div>
+        <p class="eyebrow">FAMILY DASHBOARD</p>
+        <h1 id="pageTitle">Today</h1>
+        <p class="subtitle">A calm summary of routine activity. No live video is shown here.</p>
+      </div>
+      <a class="back-link" href="/">Open elder check</a>
+    </header>
+
+    <nav class="tabs" aria-label="Dashboard sections">
+      <button class="tab active" data-view="today">Today</button>
+      <button class="tab" data-view="history">History</button>
+      <button class="tab" data-view="routines">Routines</button>
+      <button class="tab" data-view="settings">Settings</button>
+    </nav>
+
+    <div id="notice" class="notice" role="status"></div>
+
+    <section id="todayView" class="view active-view">
+      <div class="section-heading"><div><p class="eyebrow">TODAY</p><h2 id="todayHeading">Routine status</h2></div><button id="refreshToday" class="secondary">Refresh</button></div>
+      <div id="todayList" class="routine-list"></div>
+    </section>
+
+    <section id="historyView" class="view">
+      <div class="section-heading"><div><p class="eyebrow">HISTORY</p><h2>Recent activity</h2></div><label class="date-label">Date <input id="historyDate" type="date"></label></div>
+      <div id="historyList" class="event-list"></div>
+    </section>
+
+    <section id="routinesView" class="view">
+      <div class="section-heading"><div><p class="eyebrow">ROUTINE EDITOR</p><h2>Scheduled activities</h2></div><button id="newRoutine" class="primary">Add routine</button></div>
+      <div id="routineEditor" class="editor-grid"></div>
+    </section>
+
+    <section id="settingsView" class="view">
+      <div class="section-heading"><div><p class="eyebrow">SETTINGS</p><h2>Notification preferences</h2></div></div>
+      <div id="settingsPanel" class="settings-panel"></div>
+    </section>
+  </main>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
